@@ -217,6 +217,13 @@ public abstract class ComplexMob extends TamableAnimal {
 
     @SuppressWarnings("unchecked") // Don't use this outside ComplexMobs
     public <T extends ComplexMob> void breed() {
+        // Just return early if we're not the main server thread
+        // AKA don't allow WorldGen ForkJoin-created entities to breed entities (since they were added off-thread)
+        // This might be due to wantsToBreed() returning true as long as naturalBreeding is not explicitly disabled
+        if (!(this.level instanceof ServerLevel serverLevel) || !serverLevel.getServer().isSameThread()) {
+            return;
+        }
+
         int bound = 1 + (this.getOffspring() > 0 ? this.random.nextInt(this.getOffspring() + 1) : 0);
         for (int i = 0; i < bound; i++) {
             T child = (T) this.getBreedOffspring((ServerLevel) this.level, this);
